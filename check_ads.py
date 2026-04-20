@@ -13,18 +13,18 @@ def get_google_ads(serpapi_key):
             "gl": "kr",
             "location": "Seoul, South Korea",
             "google_domain": "google.co.kr",
+            "no_cache": "true",  # ✅ 캐시 사용 안 함
             "api_key": serpapi_key
         })
         results = search.get_dict()
 
-        # ✅ 전체 키 출력해서 광고가 어디 있는지 확인
+        print(f"[SERP] 검색 ID: {results.get('search_metadata', {}).get('id', '')}")
         print(f"[SERP] 전체 키: {list(results.keys())}")
 
-        # 모든 가능한 광고 키 다 시도
         ads_report = []
         all_ads = []
 
-        for key in ["ads", "bottom_ads", "top_ads", "shopping_results", "local_ads"]:
+        for key in ["ads", "bottom_ads", "top_ads"]:
             found = results.get(key, [])
             if found:
                 print(f"[SERP] '{key}' 에서 {len(found)}개 발견!")
@@ -34,14 +34,10 @@ def get_google_ads(serpapi_key):
             for i, ad in enumerate(all_ads, 1):
                 title = ad.get("title", "제목없음")
                 display_url = ad.get("displayed_link", "")
-                print(f"[SERP] 구글 SA 순번 {i}. {title} | {display_url}")
+                print(f"[SERP] 구글 SA 순번 {i}. {title}")
                 ads_report.append(f"구글 SA 순번 {i}. {title} ({display_url})")
         else:
-            print("[SERP] 광고 없음 — 전체 결과 덤프:")
-            # ✅ organic_results 첫 번째 항목 출력해서 구조 확인
-            organic = results.get("organic_results", [])
-            if organic:
-                print(f"[SERP] organic 첫째: {organic[0]}")
+            print("[SERP] 광고 없음")
             ads_report.append("검색 광고 없음")
 
         return ads_report
