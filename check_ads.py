@@ -4,16 +4,14 @@ import os
 from serpapi import GoogleSearch
 
 
-def get_google_ads(serpapi_key):
-    """구글 '솔라온케어' 검색 광고 순서 및 제목 추출"""
-    print("[SERP] 구글 광고 검색 시작")
-    try:
-        search = GoogleSearch({
-            "q": "솔라온케어",
-            "hl": "ko",
-            "gl": "kr",
-            "api_key": serpapi_key
-        })
+search = GoogleSearch({
+    "q": "솔라온케어",
+    "hl": "ko",
+    "gl": "kr",
+    "location": "Seoul, South Korea",
+    "google_domain": "google.co.kr",
+    "api_key": serpapi_key
+})
         results = search.get_dict()
 
         ads_report = []
