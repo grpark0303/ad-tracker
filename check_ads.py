@@ -5,7 +5,6 @@ from serpapi import GoogleSearch
 
 
 def get_google_ads(serpapi_key):
-    """구글 '솔라온케어' 검색 광고 순서 및 제목 추출"""
     print("[SERP] 구글 광고 검색 시작")
     try:
         search = GoogleSearch({
@@ -18,20 +17,23 @@ def get_google_ads(serpapi_key):
         })
         results = search.get_dict()
 
-        print(f"[SERP] 전체 결과 키: {list(results.keys())}")
-
         ads_report = []
-        top_ads = results.get("ads", [])
 
-        if top_ads:
-            for i, ad in enumerate(top_ads, 1):
+        # 상단 광고
+        top_ads = results.get("ads", [])
+        # 하단 광고
+        bottom_ads = results.get("bottom_ads", [])
+
+        all_ads = top_ads + bottom_ads
+
+        if all_ads:
+            for i, ad in enumerate(all_ads, 1):
                 title = ad.get("title", "제목없음")
                 display_url = ad.get("displayed_link", "")
                 print(f"[SERP] {i}위: {title} | {display_url}")
                 ads_report.append(f"{i}위: {title} ({display_url})")
         else:
             print("[SERP] 광고 없음")
-            print(f"[SERP] 받은 데이터: {results}")
             ads_report.append("검색 광고 없음")
 
         return ads_report
