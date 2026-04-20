@@ -44,7 +44,7 @@ def get_google_ads(serpapi_key):
 def send_to_google_form(status, detail):
     form_url = (
         "https://docs.google.com/forms/d/e/"
-        "1FAIpQLSe10Qm1wxcGVpREkKD0aDPSVr7CEQN1TVp_HsMkm6zLmcQ/formResponse"
+        "1FAIpQLSecpFdDiKYEDpvi4P_w94Xc_nku8cBgLR6wH6KEFTYD7Q7TAQ/formResponse"
     )
     payload = {
         "entry.916170448": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
