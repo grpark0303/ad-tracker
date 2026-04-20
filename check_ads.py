@@ -17,23 +17,31 @@ def get_google_ads(serpapi_key):
         })
         results = search.get_dict()
 
+        # ✅ 전체 키 출력해서 광고가 어디 있는지 확인
+        print(f"[SERP] 전체 키: {list(results.keys())}")
+
+        # 모든 가능한 광고 키 다 시도
         ads_report = []
+        all_ads = []
 
-        # 상단 광고
-        top_ads = results.get("ads", [])
-        # 하단 광고
-        bottom_ads = results.get("bottom_ads", [])
-
-        all_ads = top_ads + bottom_ads
+        for key in ["ads", "bottom_ads", "top_ads", "shopping_results", "local_ads"]:
+            found = results.get(key, [])
+            if found:
+                print(f"[SERP] '{key}' 에서 {len(found)}개 발견!")
+                all_ads.extend(found)
 
         if all_ads:
             for i, ad in enumerate(all_ads, 1):
                 title = ad.get("title", "제목없음")
                 display_url = ad.get("displayed_link", "")
-                print(f"[SERP] {i}위: {title} | {display_url}")
-                ads_report.append(f"{i}위: {title} ({display_url})")
+                print(f"[SERP] 구글 SA 순번 {i}. {title} | {display_url}")
+                ads_report.append(f"구글 SA 순번 {i}. {title} ({display_url})")
         else:
-            print("[SERP] 광고 없음")
+            print("[SERP] 광고 없음 — 전체 결과 덤프:")
+            # ✅ organic_results 첫 번째 항목 출력해서 구조 확인
+            organic = results.get("organic_results", [])
+            if organic:
+                print(f"[SERP] organic 첫째: {organic[0]}")
             ads_report.append("검색 광고 없음")
 
         return ads_report
@@ -59,11 +67,10 @@ def send_to_google_form(status, detail):
 
 def run():
     serpapi_key = os.environ.get('SERPAPI_KEY')
-
     ads = get_google_ads(serpapi_key)
 
-    total = len(ads)
-    summary = f"총 {total}개 광고 감지"
+    total_ads = [a for a in ads if "검색 광고 없음" not in a]
+    summary = f"총 {len(total_ads)}개 광고 감지" if total_ads else "광고 없음"
     detail = "\n".join(ads)
 
     print(f"\n[결과 요약] {summary}")
