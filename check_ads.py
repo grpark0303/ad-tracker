@@ -21,16 +21,11 @@ def get_google_ads(api_key):
         )
         results = response.json()
 
-        print(f"[SERP] 전체 키: {list(results.keys())}")
+        # ✅ ads 전체 데이터 출력
+        print(f"[SERP] ads 전체 데이터: {results.get('ads', [])}")
 
         ads_report = []
-        all_ads = []
-
-        for key in ["ads", "bottom_ads"]:
-            found = results.get(key, [])
-            if found:
-                print(f"[SERP] '{key}' 에서 {len(found)}개 발견!")
-                all_ads.extend(found)
+        all_ads = results.get("ads", []) + results.get("bottom_ads", [])
 
         if all_ads:
             for i, ad in enumerate(all_ads, 1):
@@ -39,7 +34,6 @@ def get_google_ads(api_key):
                 print(f"[SERP] 구글 SA 순번 {i}. {title} | {display_url}")
                 ads_report.append(f"구글 SA 순번 {i}. {title} ({display_url})")
         else:
-            print("[SERP] 광고 없음")
             ads_report.append("검색 광고 없음")
 
         return ads_report
