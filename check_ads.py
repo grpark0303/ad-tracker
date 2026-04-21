@@ -7,6 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup
 
 
 def get_google_ads():
@@ -36,51 +37,41 @@ def get_google_ads():
         time.sleep(5)
         driver.save_screenshot("google_search.png")
 
-        # '광고: 검색 결과' 텍스트 기준으로 광고 블록 찾기
-        page_source = driver.page_source
+        soup = BeautifulSoup(driver.page_source, "html.parser")
 
-        # 광고 영역의 제목 추출
-        # 구글 광고는 span[aria-label] 또는 특정 클래스로 구분
-        ad_blocks = driver.find_elements(
-            By.XPATH,
-            "//span[contains(text(),'광고') and contains(text(),'검색 결과')]"
-            "/ancestor::div[3]//div[@role='heading'] | "
-            "//div[contains(@aria-label,'광고')]//div[@role='heading']"
-        )
+        # ✅ '광고: 검색 결과' span 찾기
+        start_span = soup.find("span", class_="L8u9l")
+        # ✅ '광고: 검색 결과 숨기기' span 찾기
+        end_span = soup.find("span", class_="iInZTe")
 
-        if not ad_blocks:
-            # 방법 2: 광고 레이블 찾고 그 근처 제목 추출
-            ad_labels = driver.find_elements(
-                By.XPATH, "//span[contains(text(),'광고: 검색 결과')]"
-            )
-            print(f"[CRAWL] 광고 레이블 수: {len(ad_labels)}")
+        print(f"[CRAWL] 시작 span: {start_span}")
+        print(f"[CRAWL] 끝 span: {end_span}")
 
-            for label in ad_labels:
-                try:
-                    # 부모 컨테이너에서 heading 찾기
-                    container = label.find_element(By.XPATH, "./ancestor::div[5]")
-                    headings = container.find_elements(
-                        By.XPATH, ".//div[@role='heading']"
-                    )
-                    for h in headings:
-                        text = h.text.strip()
-                        if text and "광고" not in text:
-                            ad_blocks.append(h)
-                except Exception as e:
-                    print(f"[CRAWL] 레이블 처리 오류: {e}")
+        if start_span and end_span:
+            # 두 span의 공통 부모 찾기
+            # start_span에서 위로 올라가면서 광고 블록 컨테이너 찾기
+            ad_container = start_span.find_parent("div", recursive=True)
 
-        if ad_blocks:
-            seen = []
-            for el in ad_blocks:
-                text = el.text.strip()
-                if text and text not in seen:
-                    seen.append(text)
+            # 컨테이너 안에서 heading role 가진 요소들 추출
+            headings = []
+            if ad_container:
+                for el in ad_container.find_all(attrs={"role": "heading"}):
+                    text = el.get_text().strip()
+                    if text and "광고" not in text:
+                        headings.append(text)
 
-            for i, title in enumerate(seen, 1):
-                print(f"[CRAWL] 구글 SA 순번 {i}. {title}")
-                ads_report.append(f"구글 SA 순번 {i}. {title}")
+            print(f"[CRAWL] 찾은 제목들: {headings}")
+
+            if headings:
+                for i, title in enumerate(headings, 1):
+                    print(f"[CRAWL] 구글 SA 순번 {i}. {title}")
+                    ads_report.append(f"구글 SA 순번 {i}. {title}")
+            else:
+                ads_report.append("검색 광고 없음")
         else:
-            print("[CRAWL] 광고 없음")
+            # ✅ span을 못 찾으면 페이지 소스 일부 출력해서 확인
+            print("[CRAWL] 광고 span 못 찾음")
+            print(f"[CRAWL] 페이지 소스 일부: {driver.page_source[:3000]}")
             ads_report.append("검색 광고 없음")
 
     except Exception as e:
