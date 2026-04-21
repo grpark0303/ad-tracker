@@ -1,25 +1,26 @@
 import requests
 import datetime
 import os
-from serpapi import GoogleSearch
 
 
-def get_google_ads(serpapi_key):
+def get_google_ads(api_key):
     print("[SERP] 구글 광고 검색 시작")
     try:
-        search = GoogleSearch({
-            "q": "솔라온케어",
-            "hl": "ko",
-            "gl": "kr",
-            "uule": "w+CAIQICIRU2VvdWwsU291dGggS29yZWE",  # location 빼고 uule만
-            "google_domain": "google.co.kr",
-            "no_cache": "true",
-            "api_key": serpapi_key
-        })
-        results = search.get_dict()
+        response = requests.get(
+            "https://api.valueserp.com/search",
+            params={
+                "api_key": api_key,
+                "q": "솔라온케어",
+                "location": "Seoul,South Korea",
+                "google_domain": "google.co.kr",
+                "gl": "kr",
+                "hl": "ko",
+                "ads_optimized": "true",
+            },
+            timeout=30
+        )
+        results = response.json()
 
-        print(f"[SERP] 에러 내용: {results.get('error', '없음')}")
-        print(f"[SERP] 검색 ID: {results.get('search_metadata', {}).get('id', '')}")
         print(f"[SERP] 전체 키: {list(results.keys())}")
 
         ads_report = []
@@ -63,8 +64,8 @@ def send_to_google_form(status, detail):
 
 
 def run():
-    serpapi_key = os.environ.get('SERPAPI_KEY')
-    ads = get_google_ads(serpapi_key)
+    api_key = os.environ.get('VALUESERP_KEY')
+    ads = get_google_ads(api_key)
 
     total_ads = [a for a in ads if "없음" not in a and "오류" not in a and "실패" not in a]
     summary = f"총 {len(total_ads)}개 광고 감지" if total_ads else "광고 없음"
