@@ -20,5 +20,5 @@ jobs:
 
       - name: Run script
         env:
-          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          VALUESERP_KEY: ${{ secrets.VALUESERP_KEY }}
         run: python check_ads.py
