@@ -2,6 +2,7 @@ import requests
 import datetime
 import os
 from serpapi import GoogleSearch
+from bs4 import BeautifulSoup
 
 
 def get_google_ads(serpapi_key):
@@ -13,32 +14,55 @@ def get_google_ads(serpapi_key):
             "gl": "kr",
             "location": "Seoul, South Korea",
             "google_domain": "google.co.kr",
-            "no_cache": "true",  # ✅ 캐시 사용 안 함
+            "no_cache": "true",
             "api_key": serpapi_key
         })
         results = search.get_dict()
 
         print(f"[SERP] 검색 ID: {results.get('search_metadata', {}).get('id', '')}")
-        print(f"[SERP] 전체 키: {list(results.keys())}")
+
+        # ✅ HTML 파일 직접 가져와서 파싱
+        html_url = results.get("search_metadata", {}).get("raw_html_file", "")
+        print(f"[SERP] HTML URL: {html_url}")
 
         ads_report = []
-        all_ads = []
 
-        for key in ["ads", "bottom_ads", "top_ads"]:
-            found = results.get(key, [])
-            if found:
-                print(f"[SERP] '{key}' 에서 {len(found)}개 발견!")
-                all_ads.extend(found)
+        if html_url:
+            html_res = requests.get(html_url, timeout=10)
+            soup = BeautifulSoup(html_res.text, "html.parser")
 
-        if all_ads:
-            for i, ad in enumerate(all_ads, 1):
-                title = ad.get("title", "제목없음")
-                display_url = ad.get("displayed_link", "")
-                print(f"[SERP] 구글 SA 순번 {i}. {title}")
-                ads_report.append(f"구글 SA 순번 {i}. {title} ({display_url})")
+            # 광고 블록 찾기 — '광고: 검색 결과' 텍스트 기준
+            ad_titles = []
+
+            # 방법 1: data-text-ad 속성
+            for el in soup.find_all(attrs={"data-text-ad": True}):
+                title_el = el.find("div", {"role": "heading"})
+                if title_el:
+                    ad_titles.append(title_el.get_text().strip())
+
+            # 방법 2: aria-label에 광고 포함
+            if not ad_titles:
+                for el in soup.select("div[aria-label*='광고']"):
+                    h3 = el.find("h3")
+                    if h3:
+                        ad_titles.append(h3.get_text().strip())
+
+            # 방법 3: 클래스명으로
+            if not ad_titles:
+                for el in soup.select(".uEierd, .d5oMvf, .Krnil"):
+                    text = el.get_text().strip()
+                    if text:
+                        ad_titles.append(text)
+
+            if ad_titles:
+                for i, title in enumerate(ad_titles, 1):
+                    print(f"[SERP] 구글 SA 순번 {i}. {title}")
+                    ads_report.append(f"구글 SA 순번 {i}. {title}")
+            else:
+                print("[SERP] HTML에서도 광고 못 찾음")
+                ads_report.append("검색 광고 없음")
         else:
-            print("[SERP] 광고 없음")
-            ads_report.append("검색 광고 없음")
+            ads_report.append("HTML URL 없음")
 
         return ads_report
 
@@ -65,7 +89,7 @@ def run():
     serpapi_key = os.environ.get('SERPAPI_KEY')
     ads = get_google_ads(serpapi_key)
 
-    total_ads = [a for a in ads if "검색 광고 없음" not in a]
+    total_ads = [a for a in ads if "없음" not in a and "실패" not in a]
     summary = f"총 {len(total_ads)}개 광고 감지" if total_ads else "광고 없음"
     detail = "\n".join(ads)
 
