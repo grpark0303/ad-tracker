@@ -33,7 +33,16 @@ def get_google_ads(api_key):
                 all_ads.extend(found)
 
         if all_ads:
-            for i, ad in enumerate(all_ads, 1):
+            # ✅ 제목 기준 중복 제거
+            seen_titles = []
+            unique_ads = []
+            for ad in all_ads:
+                title = ad.get("title", "")
+                if title not in seen_titles:
+                    seen_titles.append(title)
+                    unique_ads.append(ad)
+
+            for i, ad in enumerate(unique_ads, 1):
                 title = ad.get("title", "제목없음")
                 display_url = ad.get("displayed_link", "")
                 print(f"[SERP] 구글 SA 순번 {i}. {title}")
