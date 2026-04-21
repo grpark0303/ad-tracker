@@ -12,13 +12,15 @@ def get_google_ads(serpapi_key):
             "hl": "ko",
             "gl": "kr",
             "location": "Seoul,South Korea",
-            "uule": "w+CAIQICIRU2VvdWwsU291dGggS29yZWE",  # 서울 한국 UULE 코드
+            "uule": "w+CAIQICIRU2VvdWwsU291dGggS29yZWE",
             "google_domain": "google.co.kr",
             "no_cache": "true",
             "api_key": serpapi_key
         })
         results = search.get_dict()
 
+        # ✅ 에러 내용 출력
+        print(f"[SERP] 에러 내용: {results.get('error', '없음')}")
         print(f"[SERP] 검색 ID: {results.get('search_metadata', {}).get('id', '')}")
         print(f"[SERP] 전체 키: {list(results.keys())}")
 
