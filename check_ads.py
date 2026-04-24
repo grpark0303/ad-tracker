@@ -10,7 +10,7 @@ def get_google_ads(api_key):
             "https://api.valueserp.com/search",
             params={
                 "api_key": api_key,
-                "q": "솔라온케어",
+                "q": "모햇",
                 "location": "Seoul,South Korea",
                 "google_domain": "google.co.kr",
                 "gl": "kr",
