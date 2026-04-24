@@ -21,13 +21,25 @@ def get_google_ads(api_key):
         )
         results = response.json()
 
-        # ✅ 모든 키와 값 출력
-        print(f"[SERP] 전체 키: {list(results.keys())}")
-        for key in results.keys():
-            if key not in ["organic_results", "search_parameters", "search_metadata", "request_info", "pagination", "serpapi_pagination"]:
-                print(f"[SERP] '{key}' 데이터: {results.get(key)}")
+        all_ads = results.get("ads", []) + results.get("bottom_ads", [])
+        ads_report = []
 
-        return ["디버깅 중"]
+        if all_ads:
+            # 상단 광고 우선, 없으면 하단
+            top_ads = [a for a in all_ads if a.get("relative_block_position") == "top"]
+            bottom_ads = [a for a in all_ads if a.get("relative_block_position") == "bottom"]
+            final_ads = top_ads if top_ads else bottom_ads
+
+            for i, ad in enumerate(final_ads, 1):
+                title = ad.get("title", "제목없음")
+                display_url = ad.get("displayed_link", "")
+                print(f"[SERP] 구글 SA 순번 {i}. {title}")
+                ads_report.append(f"구글 SA 순번 {i}. {title} ({display_url})")
+        else:
+            print("[SERP] 광고 없음")
+            ads_report.append("검색 광고 없음")
+
+        return ads_report
 
     except Exception as e:
         print(f"[SERP] 오류: {e}")
@@ -41,16 +53,25 @@ def send_to_google_form(status, detail):
     )
     payload = {
         "entry.916170448": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        "entry.1911817445": "디버깅",
-        "entry.64048030": "디버깅 중",
+        "entry.1911817445": status,
+        "entry.64048030": detail,
     }
     requests.post(form_url, data=payload, timeout=10)
+    print("[FORM] 구글 폼 전송 완료")
 
 
 def run():
     api_key = os.environ.get('VALUESERP_KEY')
     ads = get_google_ads(api_key)
-    print(f"\n[결과]\n{ads}")
+
+    total_ads = [a for a in ads if "없음" not in a and "오류" not in a and "실패" not in a]
+    summary = f"총 {len(total_ads)}개 광고 감지" if total_ads else "광고 없음"
+    detail = "\n".join(ads)
+
+    print(f"\n[결과 요약] {summary}")
+    print(f"[상세 리포트]\n{detail}")
+
+    send_to_google_form(summary, detail)
 
 
 if __name__ == "__main__":
